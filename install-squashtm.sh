@@ -155,6 +155,7 @@ log_info "Création du fichier de configuration..."
 cat > ${INSTALL_DIR}/conf/squash.tm.cfg.properties << EOF
 squash.db.update-mode=forced
 server.tomcat.basedir=${INSTALL_DIR}/tomcat-work
+server.servlet.context-path=/
 EOF
 
 chmod 644 ${INSTALL_DIR}/conf/squash.tm.cfg.properties
@@ -241,7 +242,7 @@ Version: ${SQUASHTM_VERSION}
 
 ACCÈS WEB
 ---------
-URL: http://$(hostname -I | awk '{print $1}'):8080/squash
+URL: http://$(hostname -I | awk '{print $1}'):8080
 Credentials par défaut:
   - Username: admin
   - Password: admin
@@ -300,6 +301,6 @@ echo ""
 cat ${INFO_FILE}
 echo ""
 log_info "Les informations de connexion ont été sauvegardées dans: ${INFO_FILE}"
-log_info "Accédez à SquashTM: http://$(hostname -I | awk '{print $1}'):8080/squash"
+log_info "Accédez à SquashTM: http://$(hostname -I | awk '{print $1}'):8080"
 log_info "Credentials: admin / admin"
 log_warn "N'oubliez pas de changer le mot de passe admin !"

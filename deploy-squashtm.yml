@@ -125,6 +125,7 @@
         content: |
           squash.db.update-mode=forced
           server.tomcat.basedir={{ install_dir }}/tomcat-work
+          server.servlet.context-path=/
 
     - name: Configuration du service systemd
       template:
@@ -173,7 +174,7 @@
           - "Installation de SquashTM terminée !"
           - "=========================================="
           - ""
-          - "URL: http://{{ ansible_default_ipv4.address }}:8080/squash"
+          - "URL: http://{{ ansible_default_ipv4.address }}:8080"
           - "Credentials: admin / admin"
           - ""
           - "Base de données:"
