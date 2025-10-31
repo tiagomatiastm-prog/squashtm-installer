@@ -146,7 +146,7 @@ exec java ${ARGS}
 EOFSTARTUP
 
 # Replace password placeholder
-sed -i "s/DB_PASSWORD_PLACEHOLDER/${DB_PASSWORD}/g" ${INSTALL_DIR}/bin/startup.sh
+sed -i "s|DB_PASSWORD_PLACEHOLDER|${DB_PASSWORD}|g" ${INSTALL_DIR}/bin/startup.sh
 chmod +x ${INSTALL_DIR}/bin/startup.sh
 
 # Étape 8: Configuration du service systemd
