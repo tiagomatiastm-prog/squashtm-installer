@@ -146,7 +146,16 @@ EOFSTARTUP
 sed -i "s|DB_PASSWORD_PLACEHOLDER|${DB_PASSWORD}|g" ${INSTALL_DIR}/bin/startup.sh
 chmod +x ${INSTALL_DIR}/bin/startup.sh
 
-# Étape 8: Configuration du service systemd
+# Étape 8: Création du fichier de configuration SquashTM
+log_info "Création du fichier de configuration..."
+cat > ${INSTALL_DIR}/conf/squash.tm.cfg.properties << EOF
+squash.db.update-mode=forced
+server.tomcat.basedir=${INSTALL_DIR}/tomcat-work
+EOF
+
+chmod 644 ${INSTALL_DIR}/conf/squash.tm.cfg.properties
+
+# Étape 9: Configuration du service systemd
 log_info "Configuration du service systemd..."
 cat > /etc/systemd/system/squash-tm.service << EOF
 [Unit]
@@ -176,11 +185,11 @@ ReadWritePaths=${INSTALL_DIR}
 WantedBy=multi-user.target
 EOF
 
-# Étape 9: Permissions
+# Étape 10: Permissions
 log_info "Configuration des permissions..."
 chown -R squash-tm:squash-tm ${INSTALL_DIR}
 
-# Étape 10: Démarrage du service
+# Étape 11: Démarrage du service
 log_info "Démarrage de SquashTM..."
 systemctl daemon-reload
 systemctl enable squash-tm
@@ -209,7 +218,7 @@ else
     log_warn "Vérifiez les logs avec: sudo journalctl -u squash-tm -n 50"
 fi
 
-# Étape 11: Génération du fichier d'informations
+# Étape 12: Génération du fichier d'informations
 log_info "Génération du fichier d'informations..."
 REAL_USER=$(who am i | awk '{print $1}')
 if [ -z "$REAL_USER" ] || [ "$REAL_USER" == "root" ]; then

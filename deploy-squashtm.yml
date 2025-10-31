@@ -107,6 +107,16 @@
         group: squash-tm
         mode: '0755'
 
+    - name: Création du fichier de configuration SquashTM
+      copy:
+        dest: "{{ install_dir }}/conf/squash.tm.cfg.properties"
+        owner: squash-tm
+        group: squash-tm
+        mode: '0644'
+        content: |
+          squash.db.update-mode=forced
+          server.tomcat.basedir={{ install_dir }}/tomcat-work
+
     - name: Configuration du service systemd
       template:
         src: templates/squash-tm.service.j2
