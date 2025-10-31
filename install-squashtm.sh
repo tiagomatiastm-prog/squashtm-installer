@@ -62,6 +62,7 @@ apt-get install -y \
     gnupg2 \
     openjdk-21-jre-headless \
     mariadb-server \
+    netcat-openbsd \
     unzip
 
 # Étape 3: Configuration de MariaDB
@@ -104,33 +105,51 @@ if ! id -u squash-tm > /dev/null 2>&1; then
     adduser --system --group --home ${INSTALL_DIR} --no-create-home squash-tm
 fi
 
-# Étape 7: Configuration de SquashTM
+# Étape 7: Initialisation de la base de données
+log_info "Initialisation du schéma de base de données..."
+mysql ${DB_NAME} < ${INSTALL_DIR}/database-scripts/mariadb-full-install-version-${SQUASHTM_VERSION}.sql 2>/dev/null || true
+
+# Étape 8: Configuration de SquashTM
 log_info "Configuration de SquashTM..."
 
 # Configuration du fichier startup.sh
-cat > ${INSTALL_DIR}/bin/startup.sh << EOF
+cat > ${INSTALL_DIR}/bin/startup.sh << 'EOFSTARTUP'
 #!/bin/bash
 
-# Database configuration
-export DB_TYPE="mariadb"
-export DB_URL="jdbc:mariadb://localhost:3306/${DB_NAME}?useUnicode=true&characterEncoding=UTF-8"
-export DB_USERNAME="${DB_USER}"
-export DB_PASSWORD="${DB_PASSWORD}"
+SQUASH_TM_HOME="/opt/squash-tm"
 
-# Security configuration
-export SQUASH_CRYPTO_SECRET="${CRYPTO_SECRET}"
-export SQUASH_REST_API_JWT_SECRET="${JWT_SECRET}"
+# Spring Boot datasource configuration (SquashTM 11.x uses Spring Boot variables)
+export SPRING_DATASOURCE_URL="jdbc:mariadb://localhost:3306/squashtm?useUnicode=true&characterEncoding=UTF-8"
+export SPRING_DATASOURCE_USERNAME="squashtm"
+export SPRING_DATASOURCE_PASSWORD="DB_PASSWORD_PLACEHOLDER"
 
-# Java configuration
-export JAVA_OPTS="-Xms512m -Xmx2048m -XX:MaxPermSize=256m"
+# Default variables
+JAR_NAME="${SQUASH_TM_HOME}/bundles/squash-tm.war"
+TMP_DIR="${SQUASH_TM_HOME}/tmp"
+CONF_DIR="${SQUASH_TM_HOME}/conf"
+LOG_DIR="${SQUASH_TM_HOME}/logs"
+
+# Create directories if needed
+mkdir -p "${TMP_DIR}"
+mkdir -p "${LOG_DIR}"
+
+# Java args
+JAVA_ARGS="-Xms512m -Xmx2048m"
+
+ARGS="${JAVA_ARGS} -Duser.language=en -Djava.io.tmpdir=${TMP_DIR} -Dlogging.dir=${LOG_DIR} -jar ${JAR_NAME} --spring.config.additional-location=file:${CONF_DIR}/ --spring.config.name=application,squash.tm.cfg --logging.config=${CONF_DIR}/log4j2.xml"
+
+# Clean temp files
+rm -rf ${TMP_DIR}/*
 
 # Start SquashTM
-exec ${INSTALL_DIR}/bin/squash-tm.sh
-EOF
+exec java ${ARGS}
+EOFSTARTUP
 
+# Replace password placeholder
+sed -i "s/DB_PASSWORD_PLACEHOLDER/${DB_PASSWORD}/g" ${INSTALL_DIR}/bin/startup.sh
 chmod +x ${INSTALL_DIR}/bin/startup.sh
 
-# Étape 8: Configuration du service systemd
+# Étape 9: Configuration du service systemd
 log_info "Configuration du service systemd..."
 cat > /etc/systemd/system/squash-tm.service << EOF
 [Unit]
@@ -139,14 +158,15 @@ After=network.target mariadb.service
 Requires=mariadb.service
 
 [Service]
-Type=forking
+Type=simple
 User=squash-tm
 Group=squash-tm
 WorkingDirectory=${INSTALL_DIR}
 ExecStart=${INSTALL_DIR}/bin/startup.sh
-ExecStop=${INSTALL_DIR}/bin/shutdown.sh
 Restart=on-failure
 RestartSec=10s
+StandardOutput=journal
+StandardError=journal
 
 # Security hardening
 NoNewPrivileges=true
@@ -159,29 +179,40 @@ ReadWritePaths=${INSTALL_DIR}
 WantedBy=multi-user.target
 EOF
 
-# Étape 9: Permissions
+# Étape 10: Permissions
 log_info "Configuration des permissions..."
 chown -R squash-tm:squash-tm ${INSTALL_DIR}
-chmod +x ${INSTALL_DIR}/bin/*.sh
 
-# Étape 10: Démarrage du service
+# Étape 11: Démarrage du service
 log_info "Démarrage de SquashTM..."
 systemctl daemon-reload
 systemctl enable squash-tm
 systemctl start squash-tm
 
 # Attendre que le service démarre
-log_info "Attente du démarrage de SquashTM (cela peut prendre quelques minutes)..."
-sleep 30
+log_info "Attente du démarrage de SquashTM (cela peut prendre 2-3 minutes)..."
+log_info "Vous pouvez suivre les logs avec: sudo journalctl -u squash-tm -f"
+
+# Attendre que le port 8080 soit disponible (max 3 minutes)
+COUNTER=0
+MAX_WAIT=180
+while ! nc -z localhost 8080 2>/dev/null && [ $COUNTER -lt $MAX_WAIT ]; do
+    sleep 5
+    COUNTER=$((COUNTER + 5))
+    if [ $((COUNTER % 30)) -eq 0 ]; then
+        log_info "Toujours en attente... ($COUNTER secondes)"
+    fi
+done
 
 # Vérification du statut
-if systemctl is-active --quiet squash-tm; then
+if systemctl is-active --quiet squash-tm && nc -z localhost 8080 2>/dev/null; then
     log_info "SquashTM démarré avec succès !"
 else
-    log_warn "SquashTM pourrait avoir des problèmes au démarrage. Vérifiez les logs."
+    log_warn "SquashTM pourrait avoir des problèmes au démarrage."
+    log_warn "Vérifiez les logs avec: sudo journalctl -u squash-tm -n 50"
 fi
 
-# Étape 11: Génération du fichier d'informations
+# Étape 12: Génération du fichier d'informations
 log_info "Génération du fichier d'informations..."
 REAL_USER=$(who am i | awk '{print $1}')
 if [ -z "$REAL_USER" ] || [ "$REAL_USER" == "root" ]; then

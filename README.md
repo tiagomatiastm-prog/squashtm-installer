@@ -52,6 +52,11 @@ Pour déployer SquashTM sur plusieurs serveurs ou de manière automatisée, cons
 
 Après l'installation :
 
+**⏱️ Temps de démarrage** : Le premier démarrage de SquashTM peut prendre 2 à 3 minutes. Vous pouvez suivre les logs avec :
+```bash
+sudo journalctl -u squash-tm -f
+```
+
 **URL** : `http://<IP_SERVEUR>:8080/squash`
 
 **Credentials par défaut** :
@@ -99,13 +104,15 @@ tail -f /opt/squash-tm/logs/squash-tm.log
 ```
 /opt/squash-tm/                 # Dossier d'installation
 ├── bin/                        # Scripts de démarrage
-│   ├── startup.sh             # Configuration et démarrage
-│   ├── shutdown.sh            # Arrêt propre
-│   └── squash-tm.sh           # Script principal
+│   └── startup.sh             # Script de démarrage personnalisé
+├── bundles/                    # Application WAR
+│   └── squash-tm.war          # Application principale (214 MB)
 ├── conf/                       # Configuration
-├── lib/                        # Bibliothèques Java
+├── database-scripts/           # Scripts SQL d'initialisation
 ├── logs/                       # Fichiers de logs
-└── webapp/                     # Application web
+├── plugin-files/               # Plugins (LDAP, OpenID, etc.)
+├── plugins/                    # Dossier pour plugins personnalisés
+└── tmp/                        # Fichiers temporaires
 
 /etc/systemd/system/
 └── squash-tm.service          # Service systemd

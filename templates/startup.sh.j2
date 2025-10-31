@@ -1,17 +1,29 @@
 #!/bin/bash
 
-# Database configuration
-export DB_TYPE="mariadb"
-export DB_URL="jdbc:mariadb://localhost:3306/{{ db_name }}?useUnicode=true&characterEncoding=UTF-8"
-export DB_USERNAME="{{ db_user }}"
-export DB_PASSWORD="{{ db_password }}"
+SQUASH_TM_HOME="{{ install_dir }}"
 
-# Security configuration
-export SQUASH_CRYPTO_SECRET="{{ crypto_secret }}"
-export SQUASH_REST_API_JWT_SECRET="{{ jwt_secret }}"
+# Spring Boot datasource configuration (SquashTM 11.x uses Spring Boot variables)
+export SPRING_DATASOURCE_URL="jdbc:mariadb://localhost:3306/{{ db_name }}?useUnicode=true&characterEncoding=UTF-8"
+export SPRING_DATASOURCE_USERNAME="{{ db_user }}"
+export SPRING_DATASOURCE_PASSWORD="{{ db_password }}"
 
-# Java configuration
-export JAVA_OPTS="-Xms512m -Xmx2048m -XX:MaxPermSize=256m"
+# Default variables
+JAR_NAME="${SQUASH_TM_HOME}/bundles/squash-tm.war"
+TMP_DIR="${SQUASH_TM_HOME}/tmp"
+CONF_DIR="${SQUASH_TM_HOME}/conf"
+LOG_DIR="${SQUASH_TM_HOME}/logs"
+
+# Create directories if needed
+mkdir -p "${TMP_DIR}"
+mkdir -p "${LOG_DIR}"
+
+# Java args
+JAVA_ARGS="-Xms512m -Xmx2048m"
+
+ARGS="${JAVA_ARGS} -Duser.language=en -Djava.io.tmpdir=${TMP_DIR} -Dlogging.dir=${LOG_DIR} -jar ${JAR_NAME} --spring.config.additional-location=file:${CONF_DIR}/ --spring.config.name=application,squash.tm.cfg --logging.config=${CONF_DIR}/log4j2.xml"
+
+# Clean temp files
+rm -rf ${TMP_DIR}/*
 
 # Start SquashTM
-exec {{ install_dir }}/bin/squash-tm.sh
+exec java ${ARGS}

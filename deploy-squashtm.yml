@@ -27,6 +27,7 @@
           - openjdk-21-jre-headless
           - mariadb-server
           - python3-pymysql
+          - netcat-openbsd
           - unzip
         state: present
 
@@ -95,6 +96,15 @@
         shell: /usr/sbin/nologin
         state: present
 
+    - name: Initialisation du schéma de base de données
+      mysql_db:
+        name: "{{ db_name }}"
+        state: import
+        target: "{{ install_dir }}/database-scripts/mariadb-full-install-version-{{ squashtm_version }}.sql"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      ignore_errors: yes
+      when: not install_dir_stat.stat.exists
+
     - name: Configuration du fichier startup.sh
       template:
         src: templates/startup.sh.j2
@@ -120,15 +130,6 @@
         recurse: yes
         state: directory
 
-    - name: Rendre les scripts exécutables
-      file:
-        path: "{{ item }}"
-        mode: '0755'
-      loop:
-        - "{{ install_dir }}/bin/startup.sh"
-        - "{{ install_dir }}/bin/shutdown.sh"
-        - "{{ install_dir }}/bin/squash-tm.sh"
-
     - name: Activation et démarrage du service SquashTM
       systemd:
         name: squash-tm
@@ -136,12 +137,13 @@
         enabled: yes
         daemon_reload: yes
 
-    - name: Attente du démarrage de SquashTM
+    - name: Attente du démarrage de SquashTM (peut prendre 2-3 minutes)
       wait_for:
         port: 8080
         host: localhost
-        delay: 30
+        delay: 10
         timeout: 300
+        msg: "SquashTM n'a pas démarré dans les temps. Vérifiez les logs avec: journalctl -u squash-tm -n 50"
 
     - name: Génération du fichier d'informations
       template:

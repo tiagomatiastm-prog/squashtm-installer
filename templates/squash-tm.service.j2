@@ -4,14 +4,15 @@ After=network.target mariadb.service
 Requires=mariadb.service
 
 [Service]
-Type=forking
+Type=simple
 User=squash-tm
 Group=squash-tm
 WorkingDirectory={{ install_dir }}
 ExecStart={{ install_dir }}/bin/startup.sh
-ExecStop={{ install_dir }}/bin/shutdown.sh
 Restart=on-failure
 RestartSec=10s
+StandardOutput=journal
+StandardError=journal
 
 # Security hardening
 NoNewPrivileges=true
