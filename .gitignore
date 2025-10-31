@@ -1,0 +1,27 @@
+# Ansible
+*.retry
+.vault_pass
+secrets.yml
+
+# Fichiers temporaires
+*.tmp
+*.log
+*.bak
+*~
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archives
+*.tar.gz
+*.zip
+
+# Credentials
+squashtm-info.txt

@@ -1,0 +1,56 @@
+========================================
+SquashTM Community Edition - Informations
+========================================
+
+Date d'installation: {{ ansible_date_time.iso8601 }}
+Version: {{ squashtm_version }}
+
+ACCÈS WEB
+---------
+URL: http://{{ ansible_default_ipv4.address }}:8080/squash
+Credentials par défaut:
+  - Username: admin
+  - Password: admin
+
+⚠️  IMPORTANT: Changez le mot de passe admin après la première connexion !
+
+BASE DE DONNÉES
+---------------
+Type: MariaDB
+Database: {{ db_name }}
+User: {{ db_user }}
+Password: {{ db_password }}
+
+SECRETS DE SÉCURITÉ
+-------------------
+Crypto Secret: {{ crypto_secret }}
+JWT Secret: {{ jwt_secret }}
+
+CHEMINS D'INSTALLATION
+----------------------
+Dossier: {{ install_dir }}
+Service: squash-tm.service
+User système: squash-tm
+
+COMMANDES UTILES
+----------------
+Statut du service:
+  sudo systemctl status squash-tm
+
+Redémarrer:
+  sudo systemctl restart squash-tm
+
+Logs:
+  sudo journalctl -u squash-tm -f
+  tail -f {{ install_dir }}/logs/squash-tm.log
+
+Arrêter:
+  sudo systemctl stop squash-tm
+
+DOCUMENTATION
+-------------
+- Guide utilisateur: https://tm-en.doc.squashtest.com/
+- Forum: https://forum.squashtest.com/
+- Site officiel: https://www.squashtm.com/
+
+========================================

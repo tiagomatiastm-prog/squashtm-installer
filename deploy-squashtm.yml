@@ -1,0 +1,178 @@
+---
+- name: Installation de SquashTM Community sur Debian
+  hosts: squashtm_servers
+  become: true
+  vars:
+    squashtm_version: "11.0.4.RELEASE"
+    squashtm_url: "https://nexus.squashtest.org/nexus/repository/public-releases/tm/core/squash-tm-distribution/11.0.4.RELEASE/squash-tm-11.0.4.RELEASE.tar.gz"
+    install_dir: "/opt/squash-tm"
+    db_name: "squashtm"
+    db_user: "squashtm"
+    db_password: "{{ lookup('password', '/dev/null length=24 chars=ascii_letters,digits') }}"
+    crypto_secret: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
+    jwt_secret: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
+
+  tasks:
+    - name: Mise à jour du cache APT
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Installation des dépendances système
+      apt:
+        name:
+          - wget
+          - curl
+          - gnupg2
+          - software-properties-common
+          - openjdk-17-jre-headless
+          - mariadb-server
+          - python3-pymysql
+          - unzip
+        state: present
+
+    - name: Démarrage et activation de MariaDB
+      systemd:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Sécurisation de MariaDB - Suppression des utilisateurs anonymes
+      mysql_user:
+        name: ''
+        host_all: yes
+        state: absent
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Sécurisation de MariaDB - Suppression de la base test
+      mysql_db:
+        name: test
+        state: absent
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Création de la base de données SquashTM
+      mysql_db:
+        name: "{{ db_name }}"
+        encoding: utf8mb4
+        collation: utf8mb4_unicode_ci
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Création de l'utilisateur MariaDB pour SquashTM
+      mysql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        priv: "{{ db_name }}.*:ALL"
+        host: localhost
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Téléchargement de SquashTM
+      get_url:
+        url: "{{ squashtm_url }}"
+        dest: /tmp/squash-tm.tar.gz
+        mode: '0644'
+        timeout: 300
+
+    - name: Vérification que le dossier d'installation n'existe pas déjà
+      stat:
+        path: "{{ install_dir }}"
+      register: install_dir_stat
+
+    - name: Extraction de SquashTM
+      unarchive:
+        src: /tmp/squash-tm.tar.gz
+        dest: /opt/
+        remote_src: yes
+      when: not install_dir_stat.stat.exists
+
+    - name: Renommage du dossier extrait
+      command: mv /opt/squash-tm-{{ squashtm_version }} {{ install_dir }}
+      when: not install_dir_stat.stat.exists
+
+    - name: Création de l'utilisateur système squash-tm
+      user:
+        name: squash-tm
+        system: yes
+        home: "{{ install_dir }}"
+        create_home: no
+        shell: /usr/sbin/nologin
+        state: present
+
+    - name: Configuration du fichier startup.sh
+      template:
+        src: templates/startup.sh.j2
+        dest: "{{ install_dir }}/bin/startup.sh"
+        owner: squash-tm
+        group: squash-tm
+        mode: '0755'
+
+    - name: Configuration du service systemd
+      template:
+        src: templates/squash-tm.service.j2
+        dest: /etc/systemd/system/squash-tm.service
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload systemd
+
+    - name: Application des permissions sur le dossier SquashTM
+      file:
+        path: "{{ install_dir }}"
+        owner: squash-tm
+        group: squash-tm
+        recurse: yes
+        state: directory
+
+    - name: Rendre les scripts exécutables
+      file:
+        path: "{{ item }}"
+        mode: '0755'
+      loop:
+        - "{{ install_dir }}/bin/startup.sh"
+        - "{{ install_dir }}/bin/shutdown.sh"
+        - "{{ install_dir }}/bin/squash-tm.sh"
+
+    - name: Activation et démarrage du service SquashTM
+      systemd:
+        name: squash-tm
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Attente du démarrage de SquashTM
+      wait_for:
+        port: 8080
+        host: localhost
+        delay: 30
+        timeout: 300
+
+    - name: Génération du fichier d'informations
+      template:
+        src: templates/squashtm-info.txt.j2
+        dest: /root/squashtm-info.txt
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Affichage des informations de connexion
+      debug:
+        msg:
+          - "=========================================="
+          - "Installation de SquashTM terminée !"
+          - "=========================================="
+          - ""
+          - "URL: http://{{ ansible_default_ipv4.address }}:8080/squash"
+          - "Credentials: admin / admin"
+          - ""
+          - "Base de données:"
+          - "  User: {{ db_user }}"
+          - "  Password: {{ db_password }}"
+          - ""
+          - "Les informations complètes sont dans /root/squashtm-info.txt"
+          - "=========================================="
+
+  handlers:
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes

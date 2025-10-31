@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Database configuration
+export DB_TYPE="mariadb"
+export DB_URL="jdbc:mariadb://localhost:3306/{{ db_name }}?useUnicode=true&characterEncoding=UTF-8"
+export DB_USERNAME="{{ db_user }}"
+export DB_PASSWORD="{{ db_password }}"
+
+# Security configuration
+export SQUASH_CRYPTO_SECRET="{{ crypto_secret }}"
+export SQUASH_REST_API_JWT_SECRET="{{ jwt_secret }}"
+
+# Java configuration
+export JAVA_OPTS="-Xms512m -Xmx2048m -XX:MaxPermSize=256m"
+
+# Start SquashTM
+exec {{ install_dir }}/bin/squash-tm.sh
