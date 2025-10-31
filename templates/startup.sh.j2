@@ -7,6 +7,9 @@ export SPRING_DATASOURCE_URL="jdbc:mariadb://localhost:3306/{{ db_name }}?useUni
 export SPRING_DATASOURCE_USERNAME="{{ db_user }}"
 export SPRING_DATASOURCE_PASSWORD="{{ db_password }}"
 
+# JOOQ SQL dialect (required for database query generation)
+export SPRING_JOOQ_SQL_DIALECT="MARIADB"
+
 # Default variables
 JAR_NAME="${SQUASH_TM_HOME}/bundles/squash-tm.war"
 TMP_DIR="${SQUASH_TM_HOME}/tmp"
