@@ -81,7 +81,11 @@ mysql -e "FLUSH PRIVILEGES;"
 log_info "Création de la base de données SquashTM..."
 mysql -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-mysql -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';"
+mysql -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost' WITH GRANT OPTION;"
+mysql -e "CREATE ROLE IF NOT EXISTS 'alter_squash_table_seq';"
+mysql -e "GRANT ALTER ON ${DB_NAME}.* TO 'alter_squash_table_seq';"
+mysql -e "GRANT 'alter_squash_table_seq' TO '${DB_USER}'@'localhost';"
+mysql -e "SET DEFAULT ROLE 'alter_squash_table_seq' FOR '${DB_USER}'@'localhost';"
 mysql -e "FLUSH PRIVILEGES;"
 
 # Étape 4: Téléchargement de SquashTM

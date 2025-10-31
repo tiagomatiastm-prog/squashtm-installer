@@ -62,10 +62,19 @@
       mysql_user:
         name: "{{ db_user }}"
         password: "{{ db_password }}"
-        priv: "{{ db_name }}.*:ALL"
+        priv: "{{ db_name }}.*:ALL/{{ db_name }}.*:GRANT"
         host: localhost
         state: present
         login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Création du rôle alter_squash_table_seq
+      community.mysql.mysql_query:
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        query:
+          - "CREATE ROLE IF NOT EXISTS 'alter_squash_table_seq'"
+          - "GRANT ALTER ON {{ db_name }}.* TO 'alter_squash_table_seq'"
+          - "GRANT 'alter_squash_table_seq' TO '{{ db_user }}'@'localhost'"
+          - "SET DEFAULT ROLE 'alter_squash_table_seq' FOR '{{ db_user }}'@'localhost'"
 
     - name: Téléchargement de SquashTM
       get_url:
