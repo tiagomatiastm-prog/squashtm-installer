@@ -96,7 +96,7 @@ fi
 # Étape 5: Extraction et installation
 log_info "Extraction de SquashTM..."
 tar -zxf squash-tm.tar.gz -C /opt/
-mv /opt/squash-tm-${SQUASHTM_VERSION} ${INSTALL_DIR}
+# Le tarball s'extrait directement dans /opt/squash-tm
 
 # Étape 6: Création de l'utilisateur système
 log_info "Création de l'utilisateur système squash-tm..."

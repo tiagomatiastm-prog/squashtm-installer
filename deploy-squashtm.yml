@@ -84,10 +84,7 @@
         dest: /opt/
         remote_src: yes
       when: not install_dir_stat.stat.exists
-
-    - name: Renommage du dossier extrait
-      command: mv /opt/squash-tm-{{ squashtm_version }} {{ install_dir }}
-      when: not install_dir_stat.stat.exists
+      # Le tarball s'extrait directement dans /opt/squash-tm
 
     - name: Création de l'utilisateur système squash-tm
       user:
