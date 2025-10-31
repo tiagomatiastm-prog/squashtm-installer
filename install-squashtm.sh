@@ -120,9 +120,6 @@ export SPRING_DATASOURCE_URL="jdbc:mariadb://localhost:3306/squashtm?useUnicode=
 export SPRING_DATASOURCE_USERNAME="squashtm"
 export SPRING_DATASOURCE_PASSWORD="DB_PASSWORD_PLACEHOLDER"
 
-# JOOQ SQL dialect (required for database query generation)
-export SPRING_JOOQ_SQL_DIALECT="MARIADB"
-
 # Default variables
 JAR_NAME="${SQUASH_TM_HOME}/bundles/squash-tm.war"
 TMP_DIR="${SQUASH_TM_HOME}/tmp"
@@ -133,8 +130,8 @@ LOG_DIR="${SQUASH_TM_HOME}/logs"
 mkdir -p "${TMP_DIR}"
 mkdir -p "${LOG_DIR}"
 
-# Java args
-JAVA_ARGS="-Xms512m -Xmx2048m"
+# Java args (include JOOQ dialect configuration)
+JAVA_ARGS="-Xms512m -Xmx2048m -Djooq.sql.dialect=MARIADB"
 
 ARGS="${JAVA_ARGS} -Duser.language=en -Djava.io.tmpdir=${TMP_DIR} -Dlogging.dir=${LOG_DIR} -jar ${JAR_NAME} --spring.config.additional-location=file:${CONF_DIR}/ --spring.config.name=application,squash.tm.cfg --logging.config=${CONF_DIR}/log4j2.xml"
 
