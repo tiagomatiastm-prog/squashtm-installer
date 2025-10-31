@@ -96,14 +96,8 @@
         shell: /usr/sbin/nologin
         state: present
 
-    - name: Initialisation du schéma de base de données
-      mysql_db:
-        name: "{{ db_name }}"
-        state: import
-        target: "{{ install_dir }}/database-scripts/mariadb-full-install-version-{{ squashtm_version }}.sql"
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-      ignore_errors: yes
-      when: not install_dir_stat.stat.exists
+    # Note: Database schema will be automatically initialized by Liquibase on first startup
+    # No manual SQL import needed for SquashTM 11.x
 
     - name: Configuration du fichier startup.sh
       template:

@@ -105,11 +105,8 @@ if ! id -u squash-tm > /dev/null 2>&1; then
     adduser --system --group --home ${INSTALL_DIR} --no-create-home squash-tm
 fi
 
-# Étape 7: Initialisation de la base de données
-log_info "Initialisation du schéma de base de données..."
-mysql ${DB_NAME} < ${INSTALL_DIR}/database-scripts/mariadb-full-install-version-${SQUASHTM_VERSION}.sql 2>/dev/null || true
-
-# Étape 8: Configuration de SquashTM
+# Étape 7: Configuration de SquashTM
+# Note: La base de données sera initialisée automatiquement par Liquibase au premier démarrage
 log_info "Configuration de SquashTM..."
 
 # Configuration du fichier startup.sh
@@ -149,7 +146,7 @@ EOFSTARTUP
 sed -i "s/DB_PASSWORD_PLACEHOLDER/${DB_PASSWORD}/g" ${INSTALL_DIR}/bin/startup.sh
 chmod +x ${INSTALL_DIR}/bin/startup.sh
 
-# Étape 9: Configuration du service systemd
+# Étape 8: Configuration du service systemd
 log_info "Configuration du service systemd..."
 cat > /etc/systemd/system/squash-tm.service << EOF
 [Unit]
@@ -179,11 +176,11 @@ ReadWritePaths=${INSTALL_DIR}
 WantedBy=multi-user.target
 EOF
 
-# Étape 10: Permissions
+# Étape 9: Permissions
 log_info "Configuration des permissions..."
 chown -R squash-tm:squash-tm ${INSTALL_DIR}
 
-# Étape 11: Démarrage du service
+# Étape 10: Démarrage du service
 log_info "Démarrage de SquashTM..."
 systemctl daemon-reload
 systemctl enable squash-tm
@@ -212,7 +209,7 @@ else
     log_warn "Vérifiez les logs avec: sudo journalctl -u squash-tm -n 50"
 fi
 
-# Étape 12: Génération du fichier d'informations
+# Étape 11: Génération du fichier d'informations
 log_info "Génération du fichier d'informations..."
 REAL_USER=$(who am i | awk '{print $1}')
 if [ -z "$REAL_USER" ] || [ "$REAL_USER" == "root" ]; then
