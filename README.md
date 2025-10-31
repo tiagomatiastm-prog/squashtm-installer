@@ -24,7 +24,7 @@ Ce projet fournit deux méthodes d'installation :
 - **Réseau** : Accès Internet pour télécharger les packages
 
 ### Logiciels installés automatiquement
-- Java 17 (OpenJDK)
+- Java 21 (OpenJDK)
 - MariaDB 10.6+
 - SquashTM 11.0.4
 

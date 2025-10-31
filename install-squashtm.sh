@@ -60,8 +60,7 @@ apt-get install -y \
     wget \
     curl \
     gnupg2 \
-    software-properties-common \
-    openjdk-17-jre-headless \
+    openjdk-21-jre-headless \
     mariadb-server \
     unzip
 
